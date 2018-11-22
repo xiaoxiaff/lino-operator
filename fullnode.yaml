@@ -7,5 +7,5 @@ spec:
   version: v1
   names:
     kind: Fullnode
-    plural: Fullnodes
+    plural: fullnodes
   scope: Namespaced
