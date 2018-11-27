@@ -17,10 +17,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
+	samplecrdv1 "github.com/lino-network/lino-operator/pkg/apis/samplecrd/v1"
+	clientset "github.com/lino-network/lino-operator/pkg/client/clientset/versioned"
+	fullnodescheme "github.com/lino-network/lino-operator/pkg/client/clientset/versioned/scheme"
+	informers "github.com/lino-network/lino-operator/pkg/client/informers/externalversions/samplecrd/v1"
 	listers "github.com/lino-network/lino-operator/pkg/client/listers/samplecrd/v1"
-	samplecrdv1 "github.com/resouer/k8s-controller-custom-resource/pkg/apis/samplecrd/v1"
-	clientset "github.com/resouer/k8s-controller-custom-resource/pkg/client/clientset/versioned"
-	informers "github.com/resouer/k8s-controller-custom-resource/pkg/client/informers/externalversions/samplecrd/v1"
 )
 
 const controllerAgentName = "fullnode-controller"
@@ -41,7 +42,7 @@ type Controller struct {
 	// fullnodeclientset is a clientset for our own API group
 	fullnodeclientset clientset.Interface
 
-	fullnodeLister  listers.FullnodeLister
+	fullnodesLister listers.FullnodeLister
 	fullnodesSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
@@ -113,7 +114,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.networksSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.fullnodesSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -203,7 +204,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Get the Fullnode resource with this namespace/name
-	fullnode, err := c.fullnodeLister.Fullnodes(namespace).Get(name)
+	fullnode, err := c.fullnodesLister.Fullnodes(namespace).Get(name)
 	if err != nil {
 		// The Fullnode resource may no longer exist, in which case we stop
 		// processing.
